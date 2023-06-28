@@ -57,28 +57,28 @@ export default function Course({ courseId, courseData }) {
                     onClick={() => setResource(buildCourseUrl(getResourceByItem(item.identifierref).href))}>
                     {item.title}
                 </button>
-                {item.items.length > 0 && renderItems(item.items)}
+                {item.items?.length > 0 && renderItems(item.items)}
             </>
         ));
     }
 
     useEffect(() => {
         const organizations = courseData.organizations;
-        const organization = organizations.organization;
-        const firstOrganization = organization[0];
-        const courseTitle = firstOrganization.title;
-        const firstOrganizationItems = firstOrganization.items;
-        const firstItemFromFirstOrg = firstOrganizationItems[0];
-        const resourceIdOfFirstItem = firstItemFromFirstOrg.identifierref;
+        const organization = organizations?.organization;
+        const firstOrganization = organization?.[0];
+        const courseTitle = firstOrganization?.title;
+        const firstOrganizationItems = firstOrganization?.items;
+        const firstItemFromFirstOrg = firstOrganizationItems?.[0];
+        const resourceIdOfFirstItem = firstItemFromFirstOrg?.identifierref;
         // //console.log(firstItemFromFirstOrg, "FIRRRRRRRRRRRTS")
         setTitle(courseTitle)
         setItems(firstOrganizationItems)
 
         const resources = courseData.resources;
-        const resource = resources.resource;
-        const openingResource = resource.filter((r) => r.identifier === resourceIdOfFirstItem)[0]  //pueden haber varios resource 
+        const resource = resources?.resource;
+        const openingResource = resource?.filter((r) => r.identifier === resourceIdOfFirstItem)[0]  //pueden haber varios resource 
         //console.log("RESOURCEEEEE", openingResource)
-        const firsResourceUrl = openingResource.href;
+        const firsResourceUrl = openingResource?.href;
         setResource(buildCourseUrl(firsResourceUrl))
     }, [])
 
@@ -207,7 +207,7 @@ export default function Course({ courseId, courseData }) {
                 <a href='/' className='my-2 px-3 h-3 py-1 rounded bg-slate-50 hover:bg-slate-500 hover:text-slate-50'>Back</a>
                 <h1 className='text-4xl font-bold my-6'>{title}</h1>
 
-                <div className='flex flex-col'>{!!items.length && !!items[0].items.length && renderItems(items)}</div>
+                <div className='flex flex-col'>{!!items && !!items.length && !!items[0]?.items?.length && renderItems(items)}</div>
 
                 <div className='mt-4 bg-blue-50'>
                     <h3 className='text-lg font-semibold'>SCORM Data:</h3>
