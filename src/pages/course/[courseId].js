@@ -4,7 +4,7 @@ import axios from 'axios';
 import { useRouter } from 'next/router';
 import { getCourse } from '../../utils';
 import { buildFromXML } from '../../utils/buildFromXML';
-import { buildFromXML as buildViejo } from '../../utils/clase1';
+// import { buildFromXML as buildViejo } from '../../utils/clase1';
 
 
 const FRONTEND_URL = 'http://localhost:3000';
