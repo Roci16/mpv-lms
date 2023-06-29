@@ -76,7 +76,16 @@ export const courses = [
         name: 'Flores',
         url: '/courses_files/flores/index.html',
         type: 'scorm12',
-        thumbnail: '/courses_files/scorm-1/scorm-img1.png',
+        thumbnail: '/courses_files/flores/1.jpg',
+        type: 'scorm12',
+    
+    },
+    {
+        id: 'scorm2',
+        name: 'Scorm2',
+        url: '/courses_files/scorm2/index.html',
+        type: 'scorm12',
+        thumbnail: '/courses_files/scorm-1/panel-amusements.png',
         type: 'scorm12',
     
     },
