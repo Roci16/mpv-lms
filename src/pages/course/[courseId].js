@@ -174,7 +174,6 @@ export default function Course({ courseId, courseData }) {
         window.API.LMSSetValue("cmi.objectives." + objectiveIndex + ".status", status);
     }
 
-    
     useEffect(() => {
         window.API.on('LMSSetValue.cmi.objectives.*', function (CMIElement, value) {
             console.log({CMIElement, value})
