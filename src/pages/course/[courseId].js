@@ -1,34 +1,25 @@
 import { useEffect, useState } from 'react';
 import Head from 'next/head';
 import axios from 'axios';
-import { useRouter } from 'next/router';
-import { getCourse } from '../../utils';
 import { buildFromXML } from '../../utils/buildFromXML';
-// import { buildFromXML as buildViejo } from '../../utils/clase1';
 
 
 const FRONTEND_URL = 'http://localhost:3000';
 
 export const getServerSideProps = async (context) => {
     const courseId = context.params.courseId;
-    let courseData = {};
     let objetoNuevo = {};
 
     try {
         const response = await axios.get(`${FRONTEND_URL}/courses_files/${courseId}/imsmanifest.xml`)
         const data = response.data;
-
         objetoNuevo = JSON.parse(buildFromXML(data));
-        //courseData = buildViejo(data);
-
     }
     catch (error) {
         console.error('Error:', error);
     }
 
     return { props: { courseId, courseData: objetoNuevo } }
-
-    // server side
 }
 
 
@@ -41,9 +32,6 @@ export default function Course({ courseId, courseData }) {
     const [objetives, setObjetives] = useState("");
     const [items, setItems] = useState([]);
     const [title, setTitle] = useState("");
-
-
-    //console.log(courseData)
 
     const buildCourseUrl = (url) => `/courses_files/${courseId}/${url}`;
 
@@ -164,25 +152,31 @@ export default function Course({ courseId, courseData }) {
         }
     }, [])
 
-    function setInitialObjective(objectiveIndex, id, minScore, maxScore, rawScore, status) {
-        // Para que funcione tiene que existir window.API
-        if(!window || !window.API) console.log("setInitialObjetive debe estar en el useEffect")
+    function updateObjectiveStatus(objectiveIndex, id, minScore, maxScore, score, status) {
+        if (!window || !window.API) {
+          console.log("updateObjectiveStatus debe estar en el useEffect");
+          return;
+        }
+      
         window.API.LMSSetValue("cmi.objectives." + objectiveIndex + ".id", id);
-        window.API.LMSSetValue("cmi.objectives." + objectiveIndex + ".score.min", minScore);
+                window.API.LMSSetValue("cmi.objectives." + objectiveIndex + ".score.min", minScore);
         window.API.LMSSetValue("cmi.objectives." + objectiveIndex + ".score.max", maxScore);
-        window.API.LMSSetValue("cmi.objectives." + objectiveIndex + ".score.raw", rawScore);
+        window.API.LMSSetValue("cmi.objectives." + objectiveIndex + ".score.raw", score);
         window.API.LMSSetValue("cmi.objectives." + objectiveIndex + ".status", status);
-    }
-
-    useEffect(() => {
-        window.API.on('LMSSetValue.cmi.objectives.*', function (CMIElement, value) {
-            console.log({CMIElement, value})
-        })
-        setTimeout(() => {
-            // Establecer un objetivo inicial
-            setInitialObjective(0, "Objetivo-nuevo", 0, 100, 0, "No te juno");
-        }, 1000)
-    }, [])
+      }
+      
+      useEffect(() => {
+        if(lessonStatus === "incomplete"){
+            updateObjectiveStatus(0, "Objetivo-nuevo-1", 0, 100, 0, "Incomplete");
+        }
+        else if (lessonStatus === "complete" || lessonStatus === "completed") {
+          updateObjectiveStatus(0, "Objetivo-nuevo-2", 0, 100, 0, "complete");
+        }else if(lessonStatus === "passed"){
+            updateObjectiveStatus(0, "Objetivo-nuevo-3", 0, 100, 0, "passed");
+        }else if(lessonStatus === "failed"){
+            updateObjectiveStatus(0, "Objetivo-nuevo-4", 0, 100, 0, "failed");
+        }
+      }, [lessonStatus]);
 
     useEffect(() => {
         if (typeof window !== "undefined") {
