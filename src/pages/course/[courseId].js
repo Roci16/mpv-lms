@@ -144,7 +144,7 @@ export default function Course({ courseId, courseData }) {
                 const cmiPath = CMIElement.split('.');
                 const key = cmiPath[cmiPath.length - 1]
                 console.log('path', cmiPath)
-                setObjetives(obj => ({ ...obj, [key]: value}));
+                setObjetives(obj => ({ ...obj, [key]: value }));
                 window.API.storeData(true);
                 //console.log(window.API.renderCommitCMI(true));
             });
@@ -154,29 +154,33 @@ export default function Course({ courseId, courseData }) {
 
     function updateObjectiveStatus(objectiveIndex, id, minScore, maxScore, score, status) {
         if (!window || !window.API) {
-          console.log("updateObjectiveStatus debe estar en el useEffect");
-          return;
+            console.log("updateObjectiveStatus debe estar en el useEffect");
+            return;
         }
-      
+
         window.API.LMSSetValue("cmi.objectives." + objectiveIndex + ".id", id);
-                window.API.LMSSetValue("cmi.objectives." + objectiveIndex + ".score.min", minScore);
+        window.API.LMSSetValue("cmi.objectives." + objectiveIndex + ".score.min", minScore);
         window.API.LMSSetValue("cmi.objectives." + objectiveIndex + ".score.max", maxScore);
         window.API.LMSSetValue("cmi.objectives." + objectiveIndex + ".score.raw", score);
         window.API.LMSSetValue("cmi.objectives." + objectiveIndex + ".status", status);
-      }
-      
-      useEffect(() => {
-        if(lessonStatus === "incomplete"){
-            updateObjectiveStatus(0, "Objetivo-nuevo-1", 0, 100, 0, "Incomplete");
+    }
+
+    useEffect(() => {
+        if (lessonStatus === "complete" || lessonStatus === "completed") {
+            updateObjectiveStatus(0, "Objetivo-nuevo-1", 0, 100, 0, "Completo");
+        } else if (lessonStatus === "passed") {
+            updateObjectiveStatus(0, "Objetivo-nuevo-2", 0, 100, 0, "Aprobado");
+        } else if (lessonStatus === "failed") {
+            updateObjectiveStatus(0, "Objetivo-nuevo-3", 0, 100, 0, "Fallido");
+       } else if (lessonStatus === "incomplete") {
+            updateObjectiveStatus(0, "Objetivo-nuevo-4", 0, 100, 0, "Incompleto");
+        } 
+        else {
+            setTimeout(() => {
+                updateObjectiveStatus(0, "Objetivo-nuevo-4", 0, 100, 0, "Incompleto")
+            }, 1000)
         }
-        else if (lessonStatus === "complete" || lessonStatus === "completed") {
-          updateObjectiveStatus(0, "Objetivo-nuevo-2", 0, 100, 0, "complete");
-        }else if(lessonStatus === "passed"){
-            updateObjectiveStatus(0, "Objetivo-nuevo-3", 0, 100, 0, "passed");
-        }else if(lessonStatus === "failed"){
-            updateObjectiveStatus(0, "Objetivo-nuevo-4", 0, 100, 0, "failed");
-        }
-      }, [lessonStatus]);
+    }, [lessonStatus]);
 
     useEffect(() => {
         if (typeof window !== "undefined") {
@@ -208,7 +212,12 @@ export default function Course({ courseId, courseData }) {
                     <p>Lesson Location: {lessonLocation}</p>
                     <p>Session Time: {sessionTime}</p>
                     <p>Total Time: {totalTime}</p>
-                    <pre>Objectives: {JSON.stringify(objetives, null, 2)}</pre>
+                    <h3 className='text-lg font-semibold'>SCORM Objetivos:</h3>
+                    {objetives && Object.keys(objetives).map((key) => (
+                        <p key={key}>
+                            {key}: {objetives[key]}
+                        </p>
+                    ))}
                 </div>
 
 
