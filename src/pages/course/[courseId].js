@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Head from 'next/head';
 import axios from 'axios';
 import { buildFromXML } from '../../utils/buildFromXML';
@@ -33,23 +33,28 @@ export default function Course({ courseId, courseData }) {
     const [items, setItems] = useState([]);
     const [title, setTitle] = useState("");
 
+    const [studentPreference, setStudentPreference] = useState({});
+
+
     const buildCourseUrl = (url) => `/courses_files/${courseId}/${url}`;
 
     const getResourceByItem = (resourceId) => courseData.resources.resource.filter((r) => r.identifier === resourceId)[0];
 
     function renderItems(items) {
-        return items.map((item) => (
-            <>
+        return items.map((item, index) => (
+            <React.Fragment key={item.identifier}>
                 <button
                     className='my-2 px-3 py-1 rounded bg-slate-50 hover:bg-slate-500 hover:text-slate-50'
                     onClick={() => setResource(buildCourseUrl(getResourceByItem(item.identifierref).href))}>
                     {item.title}
                 </button>
                 {item.items?.length > 0 && renderItems(item.items)}
-            </>
+            </React.Fragment>
+
         ));
     }
 
+    //Orgenizacion y Recursos
     useEffect(() => {
         const organizations = courseData.organizations;
         const organization = organizations?.organization;
@@ -83,7 +88,9 @@ export default function Course({ courseId, courseData }) {
 
             // Cargar el progreso guardado desde el localStorage
             const usersCMI = localStorage.getItem("cmi");
-            if (usersCMI) window.API.loadFromJSON(JSON.parse(usersCMI).cmi);
+            if (usersCMI) {
+                window.API.loadFromJSON(JSON.parse(usersCMI).cmi);
+            }
             window.API.on('LMSInitialize', (...rest) => {
                 //console.log('Inicializado el LMS', rest)
             });
@@ -134,27 +141,49 @@ export default function Course({ courseId, courseData }) {
                 //console.log("Session time: " + value);
             })
 
+
             // Obtener el estado inicial del objetivo
             let initialObjectiveStatus = window.API.LMSGetValue("cmi.objectives");
-            //console.log("Initial objective status: " + initialObjectiveStatus);
             setObjetives(initialObjectiveStatus);
 
             window.API.on('LMSSetValue.cmi.objectives.*', function (CMIElement, value) {
-                //console.log("Objective status: " + value);
                 const cmiPath = CMIElement.split('.');
                 const key = cmiPath[cmiPath.length - 1]
-                console.log('path', cmiPath)
+                // console.log('path', cmiPath)
                 setObjetives(obj => ({ ...obj, [key]: value }));
                 window.API.storeData(true);
-                //console.log(window.API.renderCommitCMI(true));
             });
 
+            //CMI TOTAL TIME
+            let initialStudentPreference = {}
+            setTimeout(() => {
+                initialStudentPreference = window.API.LMSGetValue("cmi.student_preference");
+                setStudentPreference(initialStudentPreference);
+            }, 1000);
+
+            window.API.on('LMSSetValue.cmi.student_preference.*', function (CMIElement, value) {
+                const cmiPath = CMIElement.split('.');
+                const key = cmiPath[cmiPath.length - 1]
+                //    console.log('path', cmiPath)
+                // console.log('Event LMSSetValue.cmi.student_preference triggered');
+                setStudentPreference((prevPreference) => ({ ...prevPreference, [key]: value }));
+                window.API.storeData(true);
+            });
+
+            // Evento LMSInitialize
+            window.API.on("LMSInitialize", () => {
+                if (window.API.LMSFinish()) {
+                    return;
+                }
+            })
         }
     }, [])
 
+
+    //Objetivos
     function updateObjectiveStatus(objectiveIndex, id, minScore, maxScore, score, status) {
         if (!window || !window.API) {
-            console.log("updateObjectiveStatus debe estar en el useEffect");
+            // console.log("updateObjectiveStatus debe estar en el useEffect");
             return;
         }
 
@@ -172,9 +201,9 @@ export default function Course({ courseId, courseData }) {
             updateObjectiveStatus(0, "Objetivo-nuevo-2", 0, 100, 0, "Aprobado");
         } else if (lessonStatus === "failed") {
             updateObjectiveStatus(0, "Objetivo-nuevo-3", 0, 100, 0, "Fallido");
-       } else if (lessonStatus === "incomplete") {
+        } else if (lessonStatus === "incomplete") {
             updateObjectiveStatus(0, "Objetivo-nuevo-4", 0, 100, 0, "Incompleto");
-        } 
+        }
         else {
             setTimeout(() => {
                 updateObjectiveStatus(0, "Objetivo-nuevo-4", 0, 100, 0, "Incompleto")
@@ -192,6 +221,37 @@ export default function Course({ courseId, courseData }) {
             });
         }
     }, []);
+
+    // CMI Student Preference
+    const updateStudentPreferenceStatus = (preferenceIndex, audio) => {
+        if (!window || !window.API) {
+            return;
+        }
+
+        // Convertir el valor del rango a un número entero
+        const audioValue = parseInt(audio, 10);
+
+        // Verificar si el audio debe silenciarse o activarse
+        if (audioValue === 0) {
+            // Silenciar el audio
+            window.API.LMSSetValue('cmi.student_preference.audio', '0');
+        } else if (audioValue === 100) {
+            // Activar el audio
+            window.API.LMSSetValue('cmi.student_preference.audio', '1');
+        }
+
+        // Actualizar el estado local del componente
+        setStudentPreference((prevPreference) => ({
+            ...prevPreference,
+            audio: audioValue.toString()
+        }));
+
+        // Guardar los datos en el API SCORM
+        window.API.storeData(true);
+    };
+
+
+
 
     return (
         <div className='p-5 flex justify-between bg-blue-100 min-h-screen'>
@@ -213,11 +273,25 @@ export default function Course({ courseId, courseData }) {
                     <p>Session Time: {sessionTime}</p>
                     <p>Total Time: {totalTime}</p>
                     <h3 className='text-lg font-semibold'>SCORM Objetivos:</h3>
-                    {objetives && Object.keys(objetives).map((key) => (
-                        <p key={key}>
-                            {key}: {objetives[key]}
-                        </p>
-                    ))}
+                    <pre>{JSON.stringify(objetives, null, 2)}</pre>
+                    <h3 className='text-lg font-semibold'>SCORM Preferencia del Estudiante:</h3>
+                    <pre>{JSON.stringify(studentPreference, null, 2)}</pre>
+
+
+                    <div>
+                        <p>Audio: {updateStudentPreferenceStatus.audio}</p>
+                        <input
+                            type="range"
+                            min="0"
+                            max="100"
+                            value={updateStudentPreferenceStatus.audio}
+                            onChange={(e) =>
+                                updateStudentPreferenceStatus(0, e.target.value)
+                              }
+                        />
+                    </div>
+
+
                 </div>
 
 
@@ -225,6 +299,7 @@ export default function Course({ courseId, courseData }) {
 
             <div className='flex w-2/3 bg-slate-50 shadow rounded-lg overflow-hidden'>
                 <iframe
+                    allow="autoplay"
                     sandbox="allow-scripts allow-forms allow-pointer-lock allow-same-origin"
                     className="w-full h-full"
                     id="course-iframe"
